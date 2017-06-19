@@ -1,0 +1,1348 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: Ahmet Batu Orhan
+//           Ahmet Namlı
+// 
+// Create Date: 12/23/2016 05:54:33 PM
+// Design Name: 
+// Module Name: Pavyon
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module main(    input logic clk,
+                input logic resetInput,
+                input logic upInput,
+                input logic downInput,
+                input logic leftInput,
+                input logic rightInput,
+                input logic speed1,
+                input logic speed2,
+                output logic OE, 
+                output logic SH_CP,
+                output logic ST_CP,
+                output logic reset,
+                output logic DS,
+                output logic [7:0]KATOT,
+                //output logic [15:0]score,
+                output a_sevseg, b_sevseg, c_sevseg, d_sevseg, e_sevseg, f_sevseg, g_sevseg, dp_sevseg,
+                output [3:0] an);
+                
+
+        logic [24:1]message;
+        logic [7:0]red;
+        logic [7:0]green;
+        logic [7:0]blue;
+     
+        assign message[24:17]= red[7:0];
+        assign message[16:9] = green[7:0];
+        assign message[8:1] = blue[7:0];
+        
+        logic f;
+        logic e;
+        logic x = 1;
+        int d = 0;
+        logic [15:0]score_in = 16'b0000000000000000;
+        logic check = 1;
+        
+        
+       
+        
+        
+        typedef enum logic [2:0] {S0, S1, S2, S3, S4, S5, S6, S7} statetype; // S0 = UP, S1 = DOWN, S2 = RIGHT, S3 = LEFT
+                                                                             // S4 = UP_T, S5 = DOWN_T, S6 = RIGHT_T, S7 = LEFT_T
+        statetype state, nextState;
+         
+        always_ff@(posedge clk, posedge resetInput) //, posedge resetInput)  
+        begin
+//            if(resetInput == 1) 
+//            begin
+//                state <= S2;
+//                d <= 0;
+//            end
+        end
+        
+                      
+        always_comb
+        case(state)
+            S0: if(upInput == 1 && downInput == 0 && leftInput == 0 && rightInput == 0 && check == 1)
+                begin
+                    nextState = S4;
+//                    score_in = score_in + 16'b0000000000000001;
+//                    check = 0;
+                end
+                else
+                begin
+                    //score = score_in;
+                    nextState = S3;
+                end
+            S1: if(upInput == 0 && downInput == 1 && leftInput == 0 && rightInput == 0)
+                begin
+                    nextState = S5;
+//                    score_in = score_in + 16'b0000000000000001;   
+//                    check = 0;
+                end
+                else
+                begin
+                    nextState = S0;
+                end            
+            S2: if(upInput == 0 && downInput == 0 && leftInput == 0 && rightInput == 1 && check == 1) 
+                begin
+                    nextState = S6;
+//                    score_in = score_in + 16'b0000000000000001;
+//                    check = 0;
+                end 
+                else  
+                begin
+                    nextState = S1;
+                end
+            S3: if(upInput == 0 && downInput == 0 && leftInput == 1 && rightInput == 0 && check == 1) 
+                begin 
+                    nextState = S7;
+//                    score_in = score_in + 16'b0000000000000001;
+//                    check = 0;
+                end
+                else 
+                begin   
+                    nextState = S2;
+                end
+                
+            S4: if(check == 1) 
+                begin
+                    score_in = score_in + 16'b0000000000000001;
+                    check = 0;    
+                    nextState = S1;
+                end
+                 
+                 
+            S5: if(check == 1) 
+                begin   
+                    score_in = score_in + 16'b0000000000000001; 
+                    check = 0; 
+                    nextState = S3;  
+                end
+                
+                
+            S6: if(check == 1) 
+                begin   
+                    score_in = score_in + 16'b0000000000000001; 
+                    check = 0; 
+                    nextState = S0;
+                end
+                
+                
+            S7: if(check == 1) 
+                begin 
+                    score_in = score_in + 16'b0000000000000001; 
+                    check = 0; 
+                    nextState = S2;
+                end
+                
+            default : nextState = S0;         
+        endcase
+        
+       
+        logic [8:0]counter;
+        integer i = 1;
+        integer a = 0;
+  
+        
+
+        always@(posedge clk)
+        begin
+            counter <= counter + 1;
+            x <= ~x;   
+        end
+        assign f = counter[8];
+        assign e = ~f;
+        
+        
+        // Posedge e
+        always@(posedge e)
+        begin
+            if(i == 410) 
+            begin
+                i <= 0;
+            end
+            else 
+            begin
+                i <= i + 1;
+            end    
+        end
+        
+        always_comb
+        begin
+            if( i < 4)
+            begin
+                reset = 1'b0;
+            end
+            else
+            begin             
+                reset = 1'b1;
+            end
+        
+            if( i > 3 && i < 28)
+            begin
+                DS = message[i-3];
+            end
+            else
+            begin
+                DS = 1'b0;
+            end
+        
+            if( i < 28)
+            begin
+                SH_CP = f;
+                ST_CP = e;
+            end
+            else
+            begin
+                SH_CP = 1'b0;
+                ST_CP = 1'b1;
+            end
+        end
+        
+        
+        
+        always_ff@(posedge f)
+        begin
+            if(i > 28 && i < 409)
+            begin
+                OE <= 1'b0;    
+            end
+            else
+            begin
+                OE <= 1'b1;
+            end
+        end
+        
+        
+        always_ff@(posedge f)
+        begin
+            if( i == 410)
+            begin
+                if( a >= 7 ) 
+                begin
+                    a<= 0; 
+                end
+                else 
+                begin   
+                    a <= a + 1; 
+                end
+            end
+        end
+        
+        always_ff@(posedge f)
+        begin
+            if(i == 410)
+            begin
+                if(a == 7)
+                begin 
+//                    if(speed1 == 1 && speed2 == 1)
+//                    begin
+//                        if( d == 25)
+//                        begin
+//                            d <= 0;
+//                            state <= nextState; 
+//                            check <= 1;     
+//                        end
+//                        else  
+//                        begin               
+//                            d <= d + 1;
+//                        end
+//                    end
+                        
+                        
+                    if(speed1 == 1 && speed2 == 0) 
+                    begin
+                        if( d == 50)
+                        begin
+                            d <= 0;
+                            state <= nextState; 
+                            check <= 1;     
+                        end
+                        else  
+                        begin               
+                            d <= d + 1;
+                        end
+                    end
+                            
+                        
+                    else if(speed1 == 0 && speed2 == 1) 
+                    begin
+                        if( d == 75)
+                        begin
+                            d <= 0;
+                            state <= nextState; 
+                            check <= 1;     
+                        end
+                        else
+                        begin               
+                            d <= d + 1;
+                        end
+                    end
+                            
+                    else if(speed1 == 0 && speed2 == 0) 
+                    begin
+                        if( d == 100)
+                        begin
+                            d <= 0;
+                            state <= nextState; 
+                            check <= 1;     
+                        end
+                        else
+                        begin               
+                            d <= d + 1;
+                        end
+                    end
+                end
+            end
+        end
+
+        
+        always_comb
+        begin
+            if (a == 0)
+            begin
+                KATOT <= 8'b10000000;
+            end
+            else if( a == 1)
+            begin 
+                KATOT <= 8'b01000000;
+            end
+            else if( a == 2)
+            begin 
+                KATOT <= 8'b00100000;
+            end
+            else if( a == 3)
+            begin 
+                KATOT <= 8'b00010000;
+            end
+            else if( a == 4)
+            begin
+                KATOT <= 8'b00001000;
+            end
+            else if( a == 5)
+            begin
+                KATOT <= 8'b00000100;
+            end
+            else if( a == 6)
+            begin
+                KATOT <= 8'b00000010;
+            end
+            else 
+            begin
+                KATOT <= 8'b00000001;
+            end
+        end
+          
+        
+        always_comb
+            case(state)
+            S0: // UP ARROW
+                if( a == 0)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;             
+                end
+                else if( a == 1)
+                begin
+                    red <= 8'b00100000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;             
+                end  
+                else if( a == 2)
+                begin
+                    red <= 8'b01100000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;             
+                end  
+                else if( a == 3)
+                begin
+                    red <= 8'b11111110;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;               
+                end  
+                else if( a == 4)
+                begin
+                    red <= 8'b11111110;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000; 
+           
+                end  
+                else if( a == 5)
+                begin
+                    red <= 8'b01100000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;         
+                end  
+                else if( a == 6)
+                begin
+                    red <= 8'b00100000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;
+                end 
+                else if( a == 7) 
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                    
+                end    
+               //UP ARROW END
+                    
+            S1: // DOWN ARROW
+                if( a == 0)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end
+                else if( a == 1)
+                begin
+                    red <= 8'b00000100;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 2)
+                begin
+                    red <= 8'b00000110;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 3)
+                begin
+                    red <= 8'b01111111;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 4)
+                begin
+                    red <= 8'b01111111;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 5)
+                begin
+                    red <= 8'b00000110;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 6)
+                begin
+                    red <= 8'b00000100;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end 
+                else 
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end
+                // DOWN ARROW END
+                
+            S2:  // RIGHT ARROW
+               if( a == 0)
+               begin
+                   red <= 8'b00011000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end
+               else if( a == 1)
+               begin
+                   red <= 8'b00111100;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end  
+               else if( a == 2)
+               begin
+                   red <= 8'b01111110;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end  
+               else if( a == 3)
+               begin
+                   red <= 8'b00011000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end  
+               else if( a == 4)
+               begin
+                   red <= 8'b00011000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end  
+               else if( a == 5)
+               begin
+                   red <= 8'b00011000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end  
+               else if( a == 6)
+               begin
+                   red <= 8'b00011000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end 
+               else 
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end       
+               // RIGHT ARROW END
+    
+            S3: // LEFT ARROW
+                if( a == 0)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end
+                else if( a == 1)
+                begin
+                    red <= 8'b00011000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 2)
+                begin
+                    red <= 8'b00011000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 3)
+                begin
+                    red <= 8'b00011000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 4)
+                begin
+                    red <= 8'b00011000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 5)
+                begin
+                    red <= 8'b01111110;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                else if( a == 6)
+                begin
+                    red <= 8'b00111100;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end 
+                else 
+                begin
+                    red <= 8'b00011000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                 
+                end  
+                // LEFT ARROW END
+                
+            S4: //TRUE UP
+                if( a == 0)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;             
+                end
+                else if( a == 1)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00100000;             
+                end  
+                else if( a == 2)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b01100000;             
+                end  
+                else if( a == 3)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b11111110;               
+                end  
+                else if( a == 4)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b11111110; 
+           
+                end  
+                else if( a == 5)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b01100000;         
+                end  
+                else if( a == 6)
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00100000;
+                end 
+                else if( a == 7) 
+                begin
+                    red <= 8'b00000000;
+                    blue <= 8'b00000000;
+                    green <= 8'b00000000;                    
+                end    
+               // TRUE UP END
+               
+               
+           S5: // TRUE DOWN END    
+               if( a == 0)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end
+               else if( a == 1)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000100;                 
+               end  
+               else if( a == 2)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000110;                 
+               end  
+               else if( a == 3)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b01111111;                 
+               end  
+               else if( a == 4)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b01111111;                 
+               end  
+               else if( a == 5)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000110;                 
+               end  
+               else if( a == 6)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000100;                 
+               end 
+               else 
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end
+               // TRUE DOWN ARROW END
+           
+           S6: // TRUE RIGHT 
+               if( a == 0)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00011000;                 
+               end
+               else if( a == 1)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00111100;                 
+               end  
+               else if( a == 2)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b01111110;                 
+               end  
+               else if( a == 3)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00011000;                 
+               end  
+               else if( a == 4)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00011000;                 
+               end  
+               else if( a == 5)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00011000;                 
+               end  
+               else if( a == 6)
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00011000;                 
+               end 
+               else 
+               begin
+                   red <= 8'b00000000;
+                   blue <= 8'b00000000;
+                   green <= 8'b00000000;                 
+               end       
+               // RIGHT TRUE ARROW END
+               
+               S7: // TRUE LEFT ARROW
+                   if( a == 0)
+                   begin
+                       red <= 8'b00000000;
+                       blue <= 8'b00000000;
+                       green <= 8'b00000000;                 
+                   end
+                   else if( a == 1)
+                   begin
+                       red <= 8'b00000000;
+                       blue <= 8'b00000000;
+                       green <= 8'b00011000;                 
+                   end  
+                   else if( a == 2)
+                   begin
+                       red <= 8'b00000000;
+                       blue <= 8'b00000000;
+                       green <= 8'b00011000;                 
+                   end  
+                   else if( a == 3)
+                   begin
+                       red <= 8'b00000000;
+                       blue <= 8'b00000000;
+                       green <= 8'b00011000;                 
+                   end  
+                   else if( a == 4)
+                   begin
+                       red <= 8'b00000000;
+                       blue <= 8'b00000000;
+                       green <= 8'b00011000;                 
+                   end  
+                   else if( a == 5)
+                   begin
+                       red <= 8'b00000000;
+                       blue <= 8'b00000000;
+                       green <= 8'b01111110;                 
+                   end  
+                   else if( a == 6)
+                   begin
+                       red <= 8'b00000000;
+                       blue <= 8'b00000000;
+                       green <= 8'b00111100;                 
+                   end 
+                   else 
+                   begin
+                       red <= 8'b00000000;
+                       blue <= 8'b00000000;
+                       green <= 8'b00011000;                 
+                   end  
+                   // TRUE LEFT ARROW END
+           
+           
+            default :   // X
+                        if( a == 0)
+                        begin
+                            red <= 8'b10000001;
+                            blue <= 8'b00000000;
+                            green <= 8'b00000000;                 
+                        end
+                        else if( a == 1)
+                        begin
+                            red <= 8'b01000010;
+                            blue <= 8'b00000000;
+                            green <= 8'b00000000;                 
+                        end  
+                        else if( a == 2)
+                        begin
+                            red <= 8'b00100100;
+                            blue <= 8'b00000000;
+                            green <= 8'b00000000;                 
+                        end  
+                        else if( a == 3)
+                        begin
+                            red <= 8'b00011000;
+                            blue <= 8'b00000000;
+                            green <= 8'b00000000;                 
+                        end  
+                        else if( a == 4)
+                        begin
+                            red <= 8'b00011000;
+                            blue <= 8'b00000000;
+                            green <= 8'b00000000;                 
+                        end  
+                        else if( a == 5)
+                        begin
+                            red <= 8'b00100100;
+                            blue <= 8'b00000000;
+                            green <= 8'b00000000;                 
+                        end  
+                        else if( a == 6)
+                        begin
+                            red <= 8'b01000010;
+                            blue <= 8'b00000000;
+                            green <= 8'b00000000;                 
+                        end 
+                        else 
+                        begin
+                            red <= 8'b10000001;
+                            blue <= 8'b00000000;
+                            green <= 8'b00000000;                 
+                        end  
+                        // X END
+        endcase
+        
+        
+        SevSeg_4digit SevSeg(clk, score_in[15:12] ,score_in[11:8], score_in[7:4], score_in[3:0], a_sevseg, b_sevseg, c_sevseg, d_sevseg, e_sevseg, f_sevseg, g_sevseg, dp_sevseg, an[3:0]);
+                 
+endmodule
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//        assign message[24:17]= red[7:0];
+//        assign message[16:9] = green[7:0];
+//        assign message[8:1] = blue[7:0];
+        
+//        logic f;
+//        logic e;
+//        logic x = 1;
+//        int d = 0;
+        
+       
+//        logic [8:0]counter;
+//        integer i = 1;
+//        integer a = 0;
+  
+        
+
+//        always@(posedge clk)
+//        begin
+//            counter <= counter + 1;
+//            x <= ~x;   
+//        end
+//        assign f = counter[8];
+//        assign e = ~f;
+        
+        
+//        // Posedge e
+//        always@(posedge e)
+//        begin
+//            if(i == 410) 
+//            begin
+//                i <= 0;
+//            end
+//            else 
+//            begin
+//                i <= i + 1;
+//            end    
+//        end
+        
+//        always_comb
+//        begin
+//            if( i < 4)
+//            begin
+//                reset = 1'b0;
+//            end
+//            else
+//            begin             
+//                reset = 1'b1;
+//            end
+        
+//            if( i > 3 && i < 28)
+//            begin
+//                DS = message[i-3];
+//            end
+//            else
+//            begin
+//                DS = 1'b0;
+//            end
+        
+//            if( i < 28)
+//            begin
+//                SH_CP = f;
+//                ST_CP = e;
+//            end
+//            else
+//            begin
+//                SH_CP = 1'b0;
+//                ST_CP = 1'b1;
+//            end
+//        end
+        
+        
+        
+//        always_ff@(posedge f)
+//        begin
+//            if(i > 28 && i < 409)
+//            begin
+//                OE <= 1'b0;    
+//            end
+//            else
+//            begin
+//                OE <= 1'b1;
+//            end
+//        end
+        
+        
+//        always_ff@(posedge f)
+//        begin
+//            if( i == 410)
+//            begin
+//                if( a >= 7 ) 
+//                begin
+//                    a<=0;
+//                end
+//                else 
+//                begin   
+//                    a <= a + 1; 
+//                end
+//            end
+//        end
+        
+//        always_ff@(posedge f)
+//        begin
+//            if(i == 410)
+//            begin
+//                if(a == 7)
+//                begin 
+//                    if(d == 180) 
+//                    begin
+//                        d <= 0;
+//                    end
+//                    else  
+//                    begin
+//                        d <= d + 1;
+//                    end
+//                end
+//            end
+//        end
+        
+//        always_comb
+//        begin
+//            if (a == 0)
+//            begin
+//                KATOT <= 8'b10000000;
+//            end
+//            else if( a == 1)
+//            begin 
+//                KATOT <= 8'b01000000;
+//            end
+//            else if( a == 2)
+//            begin 
+//                KATOT <= 8'b00100000;
+//            end
+//            else if( a == 3)
+//            begin 
+//                KATOT <= 8'b00010000;
+//            end
+//            else if( a == 4)
+//            begin
+//                KATOT <= 8'b00001000;
+//            end
+//            else if( a == 5)
+//            begin
+//                KATOT <= 8'b00000100;
+//            end
+//            else if( a == 6)
+//            begin
+//                KATOT <= 8'b00000010;
+//            end
+//            else 
+//            begin
+//                KATOT <= 8'b00000001;
+//            end
+//        end
+    
+    
+//        always@(posedge x)
+//        begin    
+//            // UP ARROW
+//            if( d <= 45)
+//            begin
+//                if( a == 0)
+//                begin
+//                    red <= 8'b00000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;             
+//                end
+//                else if( a == 1)
+//                begin
+//                    red <= 8'b00100000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;             
+//                end  
+//                else if( a == 2)
+//                begin
+//                    red <= 8'b01000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;             
+//                end  
+//                else if( a == 3)
+//                begin
+//                    red <= 8'b11111110;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;               
+//                end  
+//                else if( a == 4)
+//                begin
+//                    red <= 8'b01000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000; 
+           
+//                end  
+//                else if( a == 5)
+//                begin
+//                    red <= 8'b00100000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;         
+//                end  
+//                else if( a == 6)
+//                begin
+//                    red <= 8'b00000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;
+//                end 
+//                if( a == 7) 
+//                begin
+//                    red <= 8'b00000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                    
+//                end
+//            end
+//            // Right Arrow
+//            else if( d <= 90)
+//            begin
+//                if( a == 0)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b11111111;
+//                    green <= 8'b00000000;                 
+//                end
+//                else if( a == 1)
+//                begin
+//                    red <= 8'b00111000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 2)
+//                begin
+//                    red <= 8'b01010100;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 3)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 4)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 5)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 6)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end 
+//                else 
+//                begin
+//                    red <= 8'b00000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end
+//                score <= score + 4'b0001;   
+//            end  
+//            // Down Arrow  
+//            else if( d <= 135)
+//            begin
+//                if( a == 0)
+//                begin
+//                    red <= 8'b00000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end
+//                else if( a == 1)
+//                begin
+//                    red <= 8'b00000100;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 2)
+//                begin
+//                    red <= 8'b00000010;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 3)
+//                begin
+//                    red <= 8'b01111111;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 4)
+//                begin
+//                    red <= 8'b00000010;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 5)
+//                begin
+//                    red <= 8'b00000100;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 6)
+//                begin
+//                    red <= 8'b00000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end
+//                else 
+//                begin
+//                    red <= 8'b00000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end   
+//                score <= score + 4'b0001;
+//            end
+//            // Down Arrow
+//            else
+//            begin
+//                if( a == 0)
+//                begin
+//                    red <= 8'b00000000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end
+//                else if( a == 1)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 2)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 3)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 4)
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 5)
+//                begin
+//                    red <= 8'b01010100;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end  
+//                else if( a == 6)
+//                begin
+//                    red <= 8'b00111000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end 
+//                else 
+//                begin
+//                    red <= 8'b00010000;
+//                    blue <= 8'b00000000;
+//                    green <= 8'b00000000;                 
+//                end
+//                score <= score + 4'b0001;    
+//            end
+//        end 
+
+
+
+
+
+
+
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 10/30/2016 05:12:46 PM
+// Design Name: 
+// Module Name: SevSeg_4digit
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+// LED positions inside 7-segment
+//    A 
+//  F   B
+//    G
+//  E   C
+//    D      DP
+
+// digit positions on Basys3 :
+// in3(left), in2, in1, in0(right)
+
+//IMPLEMENTED FROM LAB 04
+
+//IMPLEMENTED FROM LAB 04
+
+//IMPLEMENTED FROM LAB 04
+
+//IMPLEMENTED FROM LAB 04
+
+//IMPLEMENTED FROM LAB 04
+
+module SevSeg_4digit(
+ input clk,
+ input [3:0] in0, in1, in2, in3,        // 4 values for 4 digits (decimal value)
+ output a, b, c, d, e, f, g, dp, //individual LED output for the 7-segment along with the digital point
+ output [3:0] an   // anode: 4-bit enable signal (active low)
+ );
+ 
+// divide system clock (100Mhz for Basys3) by 2^N using a counter, which allows us to multiplex at lower speed
+localparam N = 18;
+logic [N-1:0] count = {N{1'b0}}; //initial value
+always@ (posedge clk)
+	count <= count + 1;
+
+ 
+logic [3:0]digit_val; // 7-bit register to hold the current data on output
+logic [3:0]digit_en;  //register for enable vector
+ 
+always_comb
+ begin
+ digit_en = 4'b1111; //default
+ digit_val = in0; //default
+ 
+  case(count[N-1:N-2]) //using only the 2 MSB's of the counter 
+    
+   2'b00 :  //select first 7Seg.
+    begin
+     digit_val = in0;
+     digit_en = 4'b1110;
+    end
+    
+   2'b01:  //select second 7Seg.
+    begin
+     digit_val = in1;
+     digit_en = 4'b1101;
+    end
+    
+   2'b10:  //select third 7Seg.
+    begin
+     digit_val = in2;
+     digit_en = 4'b1011;
+    end
+     
+   2'b11:  //select forth 7Seg.
+    begin
+     digit_val = in3;
+     digit_en = 4'b0111;
+    end
+  endcase
+ end
+ 
+
+//Convert digit number to LED vector. LEDs are active low.
+logic [6:0] sseg_LEDs; 
+always_comb
+ begin 
+  sseg_LEDs = 7'b1111111; //default
+  case(digit_val)
+   4'd0 : sseg_LEDs = 7'b1000000; //to display 0
+   4'd1 : sseg_LEDs = 7'b1111001; //to display 1
+   4'd2 : sseg_LEDs = 7'b0100100; //to display 2
+   4'd3 : sseg_LEDs = 7'b0110000; //to display 3
+   4'd4 : sseg_LEDs = 7'b0011001; //to display 4
+   4'd5 : sseg_LEDs = 7'b0010010; //to display 5
+   4'd6 : sseg_LEDs = 7'b0000010; //to display 6
+   4'd7 : sseg_LEDs = 7'b1111000; //to display 7
+   4'd8 : sseg_LEDs = 7'b0000000; //to display 8
+   4'd9 : sseg_LEDs = 7'b0010000; //to display 9
+   default : sseg_LEDs = 7'b1000000; //dash
+  endcase
+ end
+ 
+assign an = digit_en; 
+assign {g, f, e, d, c, b, a} = sseg_LEDs; 
+assign dp = 1'b1; //turn dp off
+ 
+ 
+endmodule
